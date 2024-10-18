@@ -18,5 +18,6 @@ export default {
     './rules/stylistic-issues',
     './plugins/a11y',
     './plugins/scss',
+    './plugins/prettier',
   ],
 };
