@@ -260,7 +260,6 @@ describe('Switcher', () => {
       const secondLink = items[1].querySelector('a, button');
 
       await userEvent.keyboard('{Tab}');
-
       expect(document.activeElement).toBe(firstLink);
       await userEvent.keyboard('{Tab}');
 
@@ -287,17 +286,14 @@ describe('Switcher', () => {
       const secondLink = items[1].querySelector('a, button');
 
       await userEvent.keyboard('{Tab}');
-
       expect(document.activeElement).toBe(firstLink);
       await userEvent.keyboard('Shift+Tab');
-
       expect(document.activeElement).toBe(firstLink);
     });
   });
 
   describe('childrenWithProps', () => {
     const mockSwitcherItemFocus = jest.fn();
-
     const createMockChildren = (count = 3, overrideProps = {}) => {
       return Array.from({ length: count }, (_, index) => (
         <SwitcherItem
@@ -317,7 +313,6 @@ describe('Switcher', () => {
           {children}
         </Switcher>
       );
-
       const renderedChildren = container.querySelectorAll('a');
       renderedChildren.forEach((child, index) => {
         expect(child).toHaveAttribute('id', index.toString());
