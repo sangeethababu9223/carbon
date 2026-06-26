@@ -63,6 +63,16 @@ function prepareForValidation(obj) {
     delete result['$value'];
     delete result['$type'];
   } else if (
+    hasValue &&
+    typeof result['$value'] === 'string' &&
+    /^\{.+\}$/.test(result['$value'])
+  ) {
+    // Alias reference: $value is a '{token.path}' string. The DTCG spec
+    // supports this but some schema validators reject it. Strip $value/$type
+    // so the schema treats it as a group/extension node.
+    delete result['$value'];
+    delete result['$type'];
+  } else if (
     hasType &&
     !hasValue &&
     !('$ref' in result) &&

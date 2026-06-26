@@ -7,8 +7,8 @@
       "$description": "background token",
       "$extensions": {
         "carbon.themes": {
-          "white": "#e0e0e0",
-          "g10": "#e0e0e0",
+          "white": "{gray.20}",
+          "g10": "{gray.20}",
           "g90": "rgba(0, 0, 0, 0)",
           "g100": "rgba(0, 0, 0, 0)"
         }
@@ -19,8 +19,8 @@
       "$description": "background-hover token",
       "$extensions": {
         "carbon.themes": {
-          "white": "#d1d1d1",
-          "g10": "#d1d1d1",
+          "white": "{gray.20-hover}",
+          "g10": "{gray.20-hover}",
           "g90": "rgba(141, 141, 141, 0.12)",
           "g100": "rgba(141, 141, 141, 0.12)"
         }
@@ -31,8 +31,8 @@
       "$description": "selected token",
       "$extensions": {
         "carbon.themes": {
-          "white": "#ffffff",
-          "g10": "#ffffff",
+          "white": "{white}",
+          "g10": "{white}",
           "g90": "rgba(141, 141, 141, 0.24)",
           "g100": "rgba(141, 141, 141, 0.24)"
         }
