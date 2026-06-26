@@ -7,46 +7,18 @@
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
-// Lazy-loaded colors DTCG JSON for alias resolution
-let _colorTokens = null;
-
 /**
- * Load and cache the colors DTCG JSON.
- * Returns a flat map of { 'blue.60': '#0f62fe', 'cool-gray.10': '#f2f4f8', ... }
+ * Resolve a DTCG color $value object to a CSS string.
+ *
+ * DTCG color values follow one of two shapes:
+ *   • { colorSpace, components, hex }   → solid color  → use hex directly
+ *   • { colorSpace, components, alpha } → alpha color  → rgba(r, g, b, alpha)
+ *
+ * @param {*} dtcgValue - The raw $value from a DTCG token
+ * @returns {string|*} A CSS color string when the value is a DTCG color object,
+ *                     or the original value unchanged for all other types.
  */
-function getColorTokens() {
-  if (_colorTokens) return _colorTokens;
-
-  const colorsPath = path.resolve(__dirname, '../../src/dtcg/colors.json');
-  const colorsJSON = JSON.parse(fs.readFileSync(colorsPath, 'utf8'));
-
-  _colorTokens = {};
-
-  function flattenColors(obj, prefix = '') {
-    for (const [key, value] of Object.entries(obj)) {
-      if (key.startsWith('$')) continue;
-      const tokenPath = prefix ? `${prefix}.${key}` : key;
-      if (value && typeof value === 'object' && value.$value !== undefined) {
-        // Leaf token — resolve its value
-        _colorTokens[tokenPath] = resolveDTCGColorValueRaw(value.$value);
-      } else if (value && typeof value === 'object') {
-        flattenColors(value, tokenPath);
-      }
-    }
-  }
-
-  flattenColors(colorsJSON);
-  return _colorTokens;
-}
-
-/**
- * Resolve a raw DTCG color $value object (no alias resolution).
- * Used internally when building the color token map.
- */
-function resolveDTCGColorValueRaw(dtcgValue) {
+function resolveDTCGColorValue(dtcgValue) {
   if (
     dtcgValue === null ||
     typeof dtcgValue !== 'object' ||
@@ -56,46 +28,15 @@ function resolveDTCGColorValueRaw(dtcgValue) {
     return dtcgValue;
   }
 
+  // Solid color — hex fallback is present; use it directly.
   if (typeof dtcgValue.hex === 'string') {
     return dtcgValue.hex;
   }
 
+  // Alpha color — convert sRGB components (0–1) to rgba().
   const [r, g, b] = dtcgValue.components.map((c) => Math.round(c * 255));
   const alpha = dtcgValue.alpha !== undefined ? dtcgValue.alpha : 1;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-/**
- * Resolve a DTCG color $value to a CSS string.
- *
- * Handles three shapes:
- *   • '{blue.60}'                        → alias  → look up in colors.json
- *   • { colorSpace, components, hex }   → solid color  → use hex directly
- *   • { colorSpace, components, alpha } → alpha color  → rgba(r, g, b, alpha)
- *
- * @param {*} dtcgValue - The raw $value from a DTCG token
- * @returns {string|*} A CSS color string, or the original value unchanged.
- */
-function resolveDTCGColorValue(dtcgValue) {
-  // Handle alias references: '{blue.60}' → '#0f62fe'
-  if (typeof dtcgValue === 'string') {
-    const aliasMatch = dtcgValue.match(/^\{(.+)\}$/);
-    if (aliasMatch) {
-      const tokenPath = aliasMatch[1];
-      const colorTokens = getColorTokens();
-      const resolved = colorTokens[tokenPath];
-      if (resolved === undefined) {
-        throw new Error(
-          `DTCG alias '{${tokenPath}}' could not be resolved. ` +
-            `Check that '${tokenPath}' exists in src/dtcg/colors.json.`
-        );
-      }
-      return resolved;
-    }
-    return dtcgValue;
-  }
-
-  return resolveDTCGColorValueRaw(dtcgValue);
 }
 
 /**
@@ -179,13 +120,7 @@ function convertDTCGComponentTokens(dtcgTokens) {
         value.$extensions['carbon.themes']
       ) {
         const tokenName = [...path, key].join('-');
-        // Resolve any alias references in per-theme values
-        const rawThemeValues = value.$extensions['carbon.themes'];
-        const resolvedThemeValues = {};
-        for (const [theme, themeValue] of Object.entries(rawThemeValues)) {
-          resolvedThemeValues[theme] = resolveDTCGColorValue(themeValue);
-        }
-        componentTokens[tokenName] = resolvedThemeValues;
+        componentTokens[tokenName] = value.$extensions['carbon.themes'];
       } else if (value && typeof value === 'object' && !key.startsWith('$')) {
         // Recurse into nested groups
         traverse(value, [...path, key]);
